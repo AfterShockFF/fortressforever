@@ -16,7 +16,8 @@
 static int g_iBeam, g_iHalo;
 
 #ifdef CLIENT_DLL
-	ConVar laser_beam_angle("ffdev_laserbeamangle", "0.01", FCVAR_FF_FFDEV_CLIENT);
+	ConVar laser_beam_angle("ffdev_sniperlaserbeamangle", "1", FCVAR_FF_FFDEV_CLIENT);
+	ConVar ffdev_laserbeamstartpos("ffdev_sniperlaserbeamstartpos", "24", FCVAR_FF_FFDEV_CLIENT); // 24 is about right for the laser sight on the weapon
 #else
 	#include "omnibot_interface.h"
 #endif
@@ -196,7 +197,7 @@ void CFFWeaponLaserDot::SetLaserPosition(const Vector &origin)
 			AngleVectors(pOwner->EyeAngles(), &vecDir);
 
 			trace_t tr;
-			UTIL_TraceLine(vecAttachment, vecAttachment + (vecDir * MAX_TRACE_LENGTH), MASK_SHOT, pOwner, COLLISION_GROUP_LASER, &tr);
+			UTIL_TraceLine(vecAttachment + (vecDir * ffdev_laserbeamstartpos.GetFloat()), vecAttachment + (vecDir * MAX_TRACE_LENGTH), MASK_SHOT, pOwner, COLLISION_GROUP_LASER, &tr);
 
 			// Backup without using the normal (for trackerid: #0000866)
 			endPos = tr.endpos - vecDir;
@@ -206,28 +207,37 @@ void CFFWeaponLaserDot::SetLaserPosition(const Vector &origin)
 				fDrawDot = false;
 
 			// Okay so beams. yes.
-			if (!pOwner->IsLocalPlayer()) 
+			if (!pOwner->IsLocalPlayer())
 			{
 				Vector v1 = tr.endpos - tr.startpos;
 				Vector v2 = C_BasePlayer::GetLocalPlayer()->EyePosition() - tr.startpos;
 
 #if 1
-				v1.NormalizeInPlace();
-				v2.NormalizeInPlace();
+                
+                if (laser_beam_angle.GetFloat() == 1) // Laser visible from any angle
+                {
+					color32 colour = { 255, 0, 0, alpha };
+					FX_DrawLine(tr.startpos, tr.endpos, 1, m_pMaterial, colour);
+                }
+                else
+                {
+				    v1.NormalizeInPlace();
+				    v2.NormalizeInPlace();
 
-				float flDot = v1.Dot(v2);
-				float flDotBounds = cos(laser_beam_angle.GetFloat());
+				    float flDot = v1.Dot(v2);
+				    float flDotBounds = cos(laser_beam_angle.GetFloat());
 
-				if (flDot < 0.0f)
-					flDot *= -1.0f;
+				    if (flDot < 0.0f)
+					    flDot *= -1.0f;
 
-				if (flDot > flDotBounds)
-				{
-					float flVisibility = (flDot - flDotBounds) / (1.0f - flDotBounds);
-					color32 colour = { 255, 0, 0, alpha * flVisibility };
+				    if (flDot > flDotBounds)
+				    {
+					    float flVisibility = (flDot - flDotBounds) / (1.0f - flDotBounds);
+					    color32 colour = { 255, 0, 0, alpha * flVisibility };
 
-					FX_DrawLine(tr.startpos, tr.endpos, flVisibility, m_pMaterial, colour);
-				}
+					    FX_DrawLine(tr.startpos, tr.endpos, flVisibility, m_pMaterial, colour);
+				    }
+                }
 
 #else
 				Vector vecCross = v1.Cross(v2);
