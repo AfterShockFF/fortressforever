@@ -185,7 +185,7 @@ void CFFWeaponLaserDot::SetLaserPosition(const Vector &origin)
 		Vector vecAttachment, vecDir, endPos;
 		bool fDrawDot = true;
 
-		int alpha = clamp(150 + 15 * (gpGlobals->curtime - m_flStartTime), 0, 255);
+		int alpha = clamp(70 + 15 * (gpGlobals->curtime - m_flStartTime), 0, 255);
 
 		CFFPlayer *pOwner = ToFFPlayer(GetOwnerEntity());
 
@@ -211,13 +211,16 @@ void CFFWeaponLaserDot::SetLaserPosition(const Vector &origin)
 			{
 				Vector v1 = tr.endpos - tr.startpos;
 				Vector v2 = C_BasePlayer::GetLocalPlayer()->EyePosition() - tr.startpos;
-
 #if 1
-                
                 if (laser_beam_angle.GetFloat() == 1) // Laser visible from any angle
                 {
-					color32 colour = { 255, 0, 0, alpha };
-					FX_DrawLine(tr.startpos, tr.endpos, 1, m_pMaterial, colour);
+                    int randomInt = random->RandomInt(0, 5);
+                    alpha = alpha * random->RandomFloat(0, 1);
+                    if (randomInt == 0)
+                    {
+                        color32 colour = { 255, 0, 0, alpha };
+                        FX_DrawLine(tr.startpos, tr.endpos, 1, m_pMaterial, colour);
+                    }
                 }
                 else
                 {
